@@ -3,6 +3,8 @@
 
     <style name="Theme.LifeCycle" parent="android:Theme.Material.Light.NoActionBar" />
 
+    <style name="Theme.LifeCycle.AppCompat" parent="Theme.AppCompat.Light.NoActionBar" />
+
     <style name="Theme.LifeCycle.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@android:color/white</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>

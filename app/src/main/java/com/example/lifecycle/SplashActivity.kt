@@ -19,7 +19,7 @@ class SplashActivity : Activity() {
         
         splashScreen.setKeepOnScreenCondition { false }
         
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, IntroActivity::class.java))
         finish()
     }
 
