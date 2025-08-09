@@ -21,10 +21,10 @@ class IntroActivity : AppIntro2() {
             SliderPage(
                 title = "Enable Notifications",
                 description = "Allow notifications to see app updates and demonstration features. Tap 'Skip' to open notification settings manually.",
-                imageDrawable = android.R.drawable.ic_popup_reminder,
+                imageDrawable = R.drawable.ic_bell_large,
                 titleColorRes = android.R.color.black,
-                descriptionColorRes = android.R.color.darker_gray,
-                backgroundColorRes = android.R.color.white
+                descriptionColorRes = android.R.color.black,
+                backgroundColorRes = android.R.color.background_light
             )
         ))
 
