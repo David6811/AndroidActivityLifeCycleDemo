@@ -85,9 +85,6 @@ class NotificationPermissionFragment : Fragment() {
     }
     
     
-    fun openNotificationSettings() {
-        (activity as? IntroActivity)?.openNotificationSettings()
-    }
     
     fun enableNavigation() {
         (activity as? IntroActivity)?.enableNavigation()
@@ -96,4 +93,6 @@ class NotificationPermissionFragment : Fragment() {
     fun disableNavigation() {
         (activity as? IntroActivity)?.disableNavigation()
     }
+
+    fun getPresenter() = presenter
 }

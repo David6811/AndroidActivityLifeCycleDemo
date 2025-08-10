@@ -1,8 +1,11 @@
 package com.example.lifecycle.appintro
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -30,7 +33,7 @@ class NotificationPermissionPresenter(
         when {
             !isAndroid13OrHigher() -> handleOlderAndroidVersions()
             hasNotificationPermission() -> handleAlreadyGranted()
-            shouldGoToSettings() -> view?.openNotificationSettings()
+            shouldGoToSettings() -> openNotificationSettings()
             else -> {
                 hasRequestedBefore = true
                 view?.showSystemPermissionDialog()
@@ -92,6 +95,21 @@ class NotificationPermissionPresenter(
             )
         } else {
             false
+        }
+    }
+
+    private fun openNotificationSettings() {
+        val intent = createNotificationSettingsIntent()
+        context.startActivity(intent)
+    }
+
+    private fun createNotificationSettingsIntent() = Intent().apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        } else {
+            action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+            data = Uri.parse("package:${context.packageName}")
         }
     }
 
