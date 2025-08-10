@@ -1,4 +1,4 @@
-package com.example.lifecycle
+package com.example.lifecycle.activity
 
 import android.app.Activity
 import android.content.Intent

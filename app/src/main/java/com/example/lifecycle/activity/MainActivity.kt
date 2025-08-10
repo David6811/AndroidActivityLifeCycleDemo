@@ -1,4 +1,4 @@
-package com.example.lifecycle
+package com.example.lifecycle.activity
 
 import android.app.Activity
 import android.app.NotificationChannel
@@ -12,6 +12,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
+import com.example.lifecycle.R
 
 class MainActivity : Activity() {
 
