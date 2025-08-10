@@ -19,7 +19,6 @@ class NotificationPermissionPresenter(
         private const val NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS"
     }
     
-    private var hasRequestedBefore = false
     private val preferences = IntroPreferences(context)
 
     // =========================== Public Event Handlers ===========================
@@ -32,15 +31,12 @@ class NotificationPermissionPresenter(
         }
     }
 
+    // 用户点击权限按钮 - 简化逻辑：总是先尝试系统对话框
     fun onPermissionButtonClicked() {
         when {
             !isAndroid13OrHigher() -> handleOlderAndroidVersions()
             hasNotificationPermission() -> handleAlreadyGranted()
-            shouldGoToSettings() -> openNotificationSettings()
-            else -> {
-                hasRequestedBefore = true
-                view?.showSystemPermissionDialog()
-            }
+            else -> view?.showSystemPermissionDialog() // 直接弹出系统dialog
         }
     }
 
@@ -48,7 +44,8 @@ class NotificationPermissionPresenter(
         if (isGranted) {
             handlePermissionGranted()
         } else {
-            handlePermissionDenied()
+            // 权限被拒绝后，直接跳转到设置页面（避免二次弹框）
+            handlePermissionDeniedWithSettings()
         }
     }
 
@@ -74,8 +71,16 @@ class NotificationPermissionPresenter(
     }
 
     private fun handlePermissionDenied() {
-        view?.showPermissionDeniedUI(shouldGoToSettings())
+        view?.showPermissionDeniedUI(false) // 初始状态不显示设置提示
         preferences.setNavigationEnabled(false)
+    }
+
+    // 权限被拒绝后直接跳转到设置页面
+    private fun handlePermissionDeniedWithSettings() {
+        view?.showPermissionDeniedUI(true)
+        preferences.setNavigationEnabled(false)
+        // 直接打开设置页面，不需要用户再次点击
+        openNotificationSettings()
     }
 
     // =========================== Permission Check Methods ===========================
@@ -94,16 +99,7 @@ class NotificationPermissionPresenter(
         }
     }
     
-    private fun shouldGoToSettings(): Boolean {
-        return if (isAndroid13OrHigher() && view is Fragment && !hasNotificationPermission() && hasRequestedBefore) {
-            !ActivityCompat.shouldShowRequestPermissionRationale(
-                (view as Fragment).requireActivity(),
-                NOTIFICATION_PERMISSION
-            )
-        } else {
-            false
-        }
-    }
+    // 不再需要shouldGoToSettings方法，简化为直接跳转
 
     // =========================== Settings Navigation Methods ===========================
 
