@@ -1,69 +1,91 @@
 package com.example.lifecycle.appintro
 
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.lifecycle.R
 
 class NotificationPermissionFragment : Fragment() {
     
     companion object {
-        private const val TAG = "PermissionFragment"
+        private const val NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS"
     }
     
     private lateinit var permissionButton: Button
-    private lateinit var permissionLauncher: androidx.activity.result.ActivityResultLauncher<String>
-    private lateinit var presenter: NotificationPermissionPresenter
+    private lateinit var preferences: IntroPreferences
     
-    // =========================== Lifecycle Methods ===========================
+    // =========================== Fragment Lifecycle Methods ===========================
     
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_notification_permission, container, false)
         setupViews(view)
-        setupPresenter()
-        setupPermissionLauncher()
+        setupPreferences()
         return view
     }
     
     override fun onResume() {
         super.onResume()
-        presenter.onViewResumed()
+        checkAndUpdatePermissionState()
     }
     
-    override fun onDestroy() {
-        presenter.onDestroy()
-        super.onDestroy()
-    }
-    
-    // =========================== Setup Methods ===========================
+    // =========================== Initialization Methods ===========================
     
     private fun setupViews(view: View) {
         permissionButton = view.findViewById(R.id.btn_allow_notifications)
-        permissionButton.setOnClickListener { presenter.onPermissionButtonClicked() }
+        permissionButton.setOnClickListener { onPermissionButtonClicked() }
     }
     
-    private fun setupPresenter() {
-        presenter = NotificationPermissionPresenter(requireContext(), this)
+    private fun setupPreferences() {
+        preferences = IntroPreferences(requireContext())
     }
     
-    private fun setupPermissionLauncher() {
-        permissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            Log.d(TAG, "Permission result: $isGranted")
-            presenter.onSystemPermissionResult(isGranted)
+    // =========================== Permission Event Handlers ===========================
+    
+    // Check and update permission state when page is displayed
+    private fun checkAndUpdatePermissionState() {
+        if (hasNotificationPermission()) {
+            handlePermissionGranted()
+        } else {
+            handlePermissionDenied()
         }
     }
     
-    // =========================== UI Update Methods ===========================
+    // User clicks permission button - directly navigate to settings page
+    private fun onPermissionButtonClicked() {
+        if (hasNotificationPermission()) {
+            handlePermissionGranted()
+        } else {
+            openNotificationSettings()
+        }
+    }
     
-    fun showPermissionGrantedUI() {
+    // =========================== Permission State Handlers ===========================
+    
+    // Permission granted - show success state and enable navigation
+    private fun handlePermissionGranted() {
+        showPermissionGrantedUI()
+        preferences.setNavigationEnabled(true)
+    }
+    
+    // Permission denied - show settings hint and disable navigation
+    private fun handlePermissionDenied() {
+        showPermissionDeniedUI()
+        preferences.setNavigationEnabled(false)
+    }
+    
+    // =========================== UI State Management Methods ===========================
+    
+    // Show UI state for granted permission
+    private fun showPermissionGrantedUI() {
         permissionButton.apply {
             text = getString(R.string.notifications_enabled)
             isEnabled = false
@@ -71,25 +93,45 @@ class NotificationPermissionFragment : Fragment() {
         }
     }
     
-    fun showPermissionDeniedUI(isMultipleDenials: Boolean) {
+    // Show UI state for denied permission
+    private fun showPermissionDeniedUI() {
         permissionButton.apply {
-            text = if (isMultipleDenials) {
-                getString(R.string.allow_notifications_required)
-            } else {
-                getString(R.string.tap_to_allow_notifications)
-            }
+            text = getString(R.string.allow_notifications_required)
             isEnabled = true
             alpha = 1.0f
         }
     }
     
-    // =========================== Permission Action Methods ===========================
+    // =========================== Permission Check Methods ===========================
     
-    fun showSystemPermissionDialog() {
-        Log.d(TAG, "Launching system permission request")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    // Check if notification permission is granted (only needed for Android 13+)
+    private fun hasNotificationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                NOTIFICATION_PERMISSION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Auto-granted for Android versions below 13
         }
     }
-
+    
+    // =========================== Settings Navigation Methods ===========================
+    
+    // Open system notification settings page
+    private fun openNotificationSettings() {
+        val intent = createNotificationSettingsIntent()
+        startActivity(intent)
+    }
+    
+    // Create settings page intent (compatible with different Android versions)
+    private fun createNotificationSettingsIntent() = Intent().apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+            putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+        } else {
+            action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+            data = Uri.parse("package:${requireContext().packageName}")
+        }
+    }
 }
