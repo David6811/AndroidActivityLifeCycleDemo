@@ -1,4 +1,4 @@
-package com.example.lifecycle.activity
+package com.example.lifecycle.appintro
 
 import android.content.Intent
 import android.net.Uri
@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import androidx.fragment.app.Fragment
-import com.example.lifecycle.fragment.NotificationPermissionFragment
 import com.github.appintro.AppIntro2
 
 class IntroActivity : AppIntro2() {

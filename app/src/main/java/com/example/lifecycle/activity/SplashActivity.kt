@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.lifecycle.appintro.IntroActivity
 
 class SplashActivity : Activity() {
 

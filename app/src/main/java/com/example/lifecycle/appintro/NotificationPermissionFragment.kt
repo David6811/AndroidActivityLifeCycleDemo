@@ -1,4 +1,4 @@
-package com.example.lifecycle.fragment
+package com.example.lifecycle.appintro
 
 import android.app.AlertDialog
 import android.os.Build
@@ -11,9 +11,6 @@ import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.example.lifecycle.R
-import com.example.lifecycle.activity.IntroActivity
-import com.example.lifecycle.contract.NotificationPermissionContract
-import com.example.lifecycle.presenter.NotificationPermissionPresenter
 
 class NotificationPermissionFragment : Fragment(), NotificationPermissionContract.View {
     

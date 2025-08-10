@@ -1,10 +1,9 @@
-package com.example.lifecycle.presenter
+package com.example.lifecycle.appintro
 
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
-import com.example.lifecycle.contract.NotificationPermissionContract
 
 class NotificationPermissionPresenter(
     private val context: Context,

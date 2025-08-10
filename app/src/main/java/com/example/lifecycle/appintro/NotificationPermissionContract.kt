@@ -1,4 +1,4 @@
-package com.example.lifecycle.contract
+package com.example.lifecycle.appintro
 
 interface NotificationPermissionContract {
     
