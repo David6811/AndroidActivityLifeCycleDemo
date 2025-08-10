@@ -26,7 +26,7 @@
         </activity>
         
         <activity
-            android:name=".activity.IntroActivity"
+            android:name=".appintro.IntroActivity"
             android:exported="false"
             android:theme="@style/Theme.LifeCycle.AppCompat" />
             
