@@ -2,92 +2,149 @@
 
 ## 🏗️ Overview
 
-The `IntroActivity` is a critical component in the LifeCycle app that implements a permission-gated onboarding flow using MVP (Model-View-Presenter) architecture. It ensures users grant notification permissions before accessing the main application.
+The `IntroActivity` is a critical component in the LifeCycle app that implements a permission-gated onboarding flow using MVP (Model-View-Presenter) architecture with dedicated preference management. It ensures users grant notification permissions before accessing the main application.
 
-## 📊 Architecture Diagram
+## 📊 Updated Architecture Diagram
 
 ```mermaid
 graph TB
     subgraph "IntroActivity Architecture"
         IA[IntroActivity]
         NPF[NotificationPermissionFragment]
-        NPC[NotificationPermissionContract]
         NPP[NotificationPermissionPresenter]
+        IP[IntroPreferences]
         
         IA --> NPF
-        NPF --> NPC
         NPF --> NPP
-        NPP --> NPC
+        NPP --> IP
+        IA --> IP
         
         IA -.-> MA[MainActivity]
-        IA -.-> Settings[System Settings]
+        NPP -.-> Settings[System Settings]
     end
     
     subgraph "External Dependencies"
         AppIntro[AppIntro2 Library]
         Android[Android System]
+        SP[SharedPreferences]
     end
     
     IA --> AppIntro
     NPF --> Android
     NPP --> Android
+    IP --> SP
 ```
 
-## 🔄 Component Relationships
+## 🔄 Updated Component Relationships
 
 ```mermaid
 classDiagram
     class IntroActivity {
-        -isNavigationEnabled: boolean
+        -preferences: IntroPreferences
         +onCreate()
-        +onSkipPressed()
-        +onNextPressed()
         +onDonePressed()
-        +enableNavigation()
-        +disableNavigation()
-        +openNotificationSettings()
-        -setupIntro()
-        -shouldAllowNavigation()
-        -createNotificationSettingsIntent()
-        -goToMainActivity()
+        +setupIntro()
+        +shouldAllowNavigation()
+        +goToMainActivity()
     }
     
     class NotificationPermissionFragment {
         -permissionButton: Button
         -permissionLauncher: ActivityResultLauncher
-        -presenter: Presenter
+        -presenter: NotificationPermissionPresenter
         +onCreateView()
         +onResume()
         +onDestroy()
+        +setupViews()
+        +setupPresenter()
+        +setupPermissionLauncher()
         +showPermissionGrantedUI()
         +showPermissionDeniedUI()
         +showSystemPermissionDialog()
-        +showCustomPermissionDialog()
-    }
-    
-    class NotificationPermissionContract {
-        <<interface>>
-        +View
-        +Presenter
     }
     
     class NotificationPermissionPresenter {
         -context: Context
-        -view: View
-        -denialCount: int
-        +onViewCreated()
+        -view: NotificationPermissionFragment
+        -hasRequestedBefore: boolean
+        -preferences: IntroPreferences
         +onViewResumed()
         +onPermissionButtonClicked()
         +onSystemPermissionResult()
+        +onDestroy()
+        -handleOlderAndroidVersions()
+        -handlePermissionGranted()
+        -handlePermissionDenied()
+        -isAndroid13OrHigher()
+        -hasNotificationPermission()
+        -shouldGoToSettings()
+        -openNotificationSettings()
+        -createNotificationSettingsIntent()
+    }
+    
+    class IntroPreferences {
+        -prefs: SharedPreferences
+        +isNavigationEnabled(): Boolean
+        +setNavigationEnabled(Boolean)
     }
     
     IntroActivity --> NotificationPermissionFragment
-    NotificationPermissionFragment ..|> NotificationPermissionContract
-    NotificationPermissionPresenter ..|> NotificationPermissionContract
+    IntroActivity --> IntroPreferences
     NotificationPermissionFragment --> NotificationPermissionPresenter
+    NotificationPermissionPresenter --> IntroPreferences
 ```
 
-## 🚀 User Flow Diagram
+## 🏗️ Code Organization Structure
+
+### **NotificationPermissionFragment Organization:**
+```mermaid
+graph TD
+    NPF[NotificationPermissionFragment] --> LC[Lifecycle Methods]
+    NPF --> SM[Setup Methods]
+    NPF --> UI[UI Update Methods]
+    NPF --> PA[Permission Action Methods]
+    
+    LC --> onCreateView
+    LC --> onResume
+    LC --> onDestroy
+    
+    SM --> setupViews
+    SM --> setupPresenter
+    SM --> setupPermissionLauncher
+    
+    UI --> showPermissionGrantedUI
+    UI --> showPermissionDeniedUI
+    
+    PA --> showSystemPermissionDialog
+```
+
+### **NotificationPermissionPresenter Organization:**
+```mermaid
+graph TD
+    NPP[NotificationPermissionPresenter] --> EH[Public Event Handlers]
+    NPP --> PSH[Permission State Handlers]
+    NPP --> PCM[Permission Check Methods]
+    NPP --> SNM[Settings Navigation Methods]
+    
+    EH --> onViewResumed
+    EH --> onPermissionButtonClicked
+    EH --> onSystemPermissionResult
+    EH --> onDestroy
+    
+    PSH --> handleOlderAndroidVersions
+    PSH --> handleAlreadyGranted
+    PSH --> handlePermissionGranted
+    PSH --> handlePermissionDenied
+    
+    PCM --> isAndroid13OrHigher
+    PCM --> hasNotificationPermission
+    PCM --> shouldGoToSettings
+    
+    SNM --> openNotificationSettings
+    SNM --> createNotificationSettingsIntent
+```
+
+## 🚀 Updated User Flow Diagram
 
 ```mermaid
 flowchart TD
@@ -95,41 +152,41 @@ flowchart TD
     Splash --> Intro[IntroActivity]
     
     Intro --> Setup[Setup: Add NotificationPermissionFragment]
-    Setup --> ShowUI[Display Permission UI]
+    Setup --> InitPrefs[Initialize IntroPreferences]
+    InitPrefs --> ShowUI[Display Permission UI]
     
     ShowUI --> Check{Android 13+?}
     Check -->|No| Auto[Auto-grant Permission]
     Check -->|Yes| Button[Show Permission Button]
     
-    Auto --> Enable[Enable Navigation]
-    Enable --> Next[Next Button Active]
+    Auto --> SaveEnabled[Save Navigation: true]
+    SaveEnabled --> Next[Done Button Active]
     
     Button --> Click[User Clicks Button]
-    Click --> FirstRequest{First/Second Request?}
+    Click --> HasRequested{Has Requested Before?}
     
-    FirstRequest -->|Yes| SystemDialog[System Permission Dialog]
-    FirstRequest -->|No| CustomDialog[Custom Permission Dialog]
+    HasRequested -->|No| SystemDialog[System Permission Dialog]
+    HasRequested -->|Yes| CheckSettings{Should Go to Settings?}
+    
+    CheckSettings -->|Yes| DirectSettings[Open System Settings]
+    CheckSettings -->|No| SystemDialog
     
     SystemDialog --> Grant1{Permission Granted?}
     Grant1 -->|Yes| Success[✓ Permission Granted]
-    Grant1 -->|No| Deny1[Increment Denial Count]
+    Grant1 -->|No| SaveDisabled[Save Navigation: false]
     
-    CustomDialog --> Grant2{User Allows?}
-    Grant2 -->|Yes| Settings[Open System Settings]
-    Grant2 -->|No| Deny2[User Remains on Screen]
+    Success --> SaveEnabled
+    SaveDisabled --> Button
     
-    Deny1 --> Button
-    Deny2 --> Button
+    DirectSettings --> Return[User Returns from Settings]
+    Return --> CheckPerm[Check Permission Status]
+    CheckPerm --> Grant2{Permission Status?}
+    Grant2 -->|Granted| Success
+    Grant2 -->|Denied| Button
     
-    Success --> Enable
-    Settings --> Return[User Returns from Settings]
-    Return --> CheckPerm{Permission Status?}
-    CheckPerm -->|Granted| Success
-    CheckPerm -->|Denied| Button
-    
-    Next --> Skip{Skip Pressed?}
-    Skip -->|Yes| Settings
-    Skip -->|No| NavCheck{Navigation Enabled?}
+    Next --> DonePressed[User Presses Done]
+    DonePressed --> LoadState[Load Navigation State]
+    LoadState --> NavCheck{Navigation Enabled?}
     
     NavCheck -->|Yes| Main[MainActivity]
     NavCheck -->|No| Block[Stay on Intro]
@@ -138,54 +195,57 @@ flowchart TD
     Main --> End([App Running])
 ```
 
-## 🎯 Permission Handling Strategy
+## 🎯 Updated Permission Handling Strategy
 
 ```mermaid
 stateDiagram-v2
     [*] --> Initial: onCreate()
     
-    Initial --> CheckAndroid: Check Android Version
+    Initial --> InitPreferences: Create IntroPreferences
+    InitPreferences --> CheckAndroid: Check Android Version
     
     CheckAndroid --> Android12: API < 33
     CheckAndroid --> Android13: API >= 33
     
     Android12 --> AutoGranted: Permission Auto-granted
-    AutoGranted --> NavigationEnabled
+    AutoGranted --> SaveTrue: preferences.setNavigationEnabled(true)
+    SaveTrue --> NavigationEnabled
     
     Android13 --> PermissionUI: Show Permission Button
     
     PermissionUI --> UserClick: Button Clicked
     
-    UserClick --> FirstAttempt: denialCount < 2
-    UserClick --> MultipleAttempts: denialCount >= 2
+    UserClick --> CheckRequested: Check hasRequestedBefore
+    
+    CheckRequested --> FirstAttempt: hasRequestedBefore = false
+    CheckRequested --> CheckSettings: hasRequestedBefore = true
+    
+    CheckSettings --> SystemDialog: shouldShowRationale = true
+    CheckSettings --> DirectSettings: shouldShowRationale = false
     
     FirstAttempt --> SystemDialog: Launch System Dialog
-    MultipleAttempts --> CustomDialog: Show Custom Dialog
     
     SystemDialog --> SystemGranted: User Allows
     SystemDialog --> SystemDenied: User Denies
     
-    CustomDialog --> SettingsRedirect: User Clicks Allow
-    CustomDialog --> CustomDenied: User Clicks Don't Allow
+    SystemGranted --> SaveTrue
+    SystemDenied --> SaveFalse: preferences.setNavigationEnabled(false)
+    SaveFalse --> PermissionUI
     
-    SystemGranted --> NavigationEnabled
-    SystemDenied --> PermissionUI
-    CustomDenied --> PermissionUI
-    
-    SettingsRedirect --> SettingsOpen: Launch System Settings
+    DirectSettings --> SettingsOpen: Launch System Settings
     SettingsOpen --> SettingsReturn: User Returns
     SettingsReturn --> CheckStatus: Check Permission Status
     
-    CheckStatus --> NavigationEnabled: Permission Granted
-    CheckStatus --> PermissionUI: Permission Still Denied
+    CheckStatus --> SaveTrue: Permission Granted
+    CheckStatus --> SaveFalse: Permission Still Denied
     
-    NavigationEnabled --> Ready: Next Button Active
+    NavigationEnabled --> Ready: Done Button Active
     Ready --> MainActivity: User Navigates Forward
     
     MainActivity --> [*]
 ```
 
-## 🔧 Method Interaction Flow
+## 🔧 Updated Method Interaction Flow
 
 ```mermaid
 sequenceDiagram
@@ -193,26 +253,35 @@ sequenceDiagram
     participant IntroActivity as IntroActivity
     participant Fragment as NotificationPermissionFragment
     participant Presenter as NotificationPermissionPresenter
+    participant Preferences as IntroPreferences
     participant System as Android System
     
     User->>IntroActivity: App Launch
     IntroActivity->>IntroActivity: onCreate()
+    IntroActivity->>Preferences: create IntroPreferences
     IntroActivity->>IntroActivity: setupIntro()
     IntroActivity->>Fragment: addSlide()
     
     Fragment->>Fragment: onCreateView()
     Fragment->>Presenter: create presenter
-    Fragment->>Presenter: onViewCreated()
+    Presenter->>Preferences: create IntroPreferences
     
     Fragment->>Fragment: onResume()
     Fragment->>Presenter: onViewResumed()
     Presenter->>Presenter: checkAndUpdatePermissionState()
-    Presenter->>Fragment: showPermissionDeniedUI()
+    
+    alt Permission Denied
+        Presenter->>Fragment: showPermissionDeniedUI()
+        Presenter->>Preferences: setNavigationEnabled(false)
+    else Permission Granted
+        Presenter->>Fragment: showPermissionGrantedUI()
+        Presenter->>Preferences: setNavigationEnabled(true)
+    end
     
     User->>Fragment: Click Permission Button
     Fragment->>Presenter: onPermissionButtonClicked()
     
-    alt First/Second Attempt
+    alt First Request
         Presenter->>Fragment: showSystemPermissionDialog()
         Fragment->>System: launch permission request
         System-->>Fragment: permission result
@@ -220,27 +289,19 @@ sequenceDiagram
         
         alt Permission Granted
             Presenter->>Fragment: showPermissionGrantedUI()
-            Presenter->>IntroActivity: enableNavigation()
+            Presenter->>Preferences: setNavigationEnabled(true)
         else Permission Denied
             Presenter->>Fragment: showPermissionDeniedUI()
-            Presenter->>IntroActivity: disableNavigation()
+            Presenter->>Preferences: setNavigationEnabled(false)
         end
-    else Multiple Attempts
-        Presenter->>Fragment: showCustomPermissionDialog()
-        
-        alt User Clicks Allow
-            Fragment->>Presenter: onCustomDialogAllowClicked()
-            Presenter->>Fragment: openNotificationSettings()
-            Fragment->>IntroActivity: openNotificationSettings()
-            IntroActivity->>System: launch settings intent
-        else User Clicks Don't Allow
-            Fragment->>Presenter: onCustomDialogDenyClicked()
-            Presenter->>Fragment: showPermissionDeniedUI()
-        end
+    else Should Go to Settings
+        Presenter->>Presenter: openNotificationSettings()
+        Presenter->>System: launch settings intent
     end
     
-    User->>IntroActivity: Click Next/Done
-    IntroActivity->>IntroActivity: shouldAllowNavigation()
+    User->>IntroActivity: Click Done
+    IntroActivity->>Preferences: isNavigationEnabled()
+    Preferences-->>IntroActivity: navigation state
     
     alt Navigation Enabled
         IntroActivity->>IntroActivity: goToMainActivity()
@@ -250,37 +311,38 @@ sequenceDiagram
     end
 ```
 
-## 🏛️ MVP Architecture Benefits
+## 🏛️ Enhanced MVP Architecture Benefits
 
-### **Separation of Concerns**
+### **Improved Separation of Concerns**
 ```mermaid
 graph LR
     subgraph "View Layer"
-        V1[IntroActivity<br/>Navigation Logic]
+        V1[IntroActivity<br/>Flow Control]
         V2[NotificationPermissionFragment<br/>UI Components]
-    end
-    
-    subgraph "Contract Layer"
-        C[NotificationPermissionContract<br/>Interface Definitions]
     end
     
     subgraph "Presenter Layer"
         P[NotificationPermissionPresenter<br/>Business Logic]
     end
     
+    subgraph "Model Layer"
+        M[IntroPreferences<br/>Data Persistence]
+    end
+    
     V1 -.-> V2
-    V2 --> C
-    P --> C
     V2 <--> P
+    P --> M
+    V1 --> M
 ```
 
-### **Key Architecture Advantages**
-1. **Testability**: Presenter can be unit tested independently
-2. **Maintainability**: Clear separation of UI and business logic
-3. **Reusability**: Presenter logic can be reused with different views
-4. **Scalability**: Easy to add new features without affecting existing code
+### **Key Architecture Improvements**
+1. **Dedicated Persistence Layer**: `IntroPreferences` encapsulates all SharedPreferences logic
+2. **Simplified Dependencies**: Removed intermediate delegation methods
+3. **Better Code Organization**: Functions grouped by responsibility with clear section headers
+4. **Enhanced Testability**: Each component can be tested independently
+5. **Improved Maintainability**: Clear separation between UI, business logic, and data persistence
 
-## 🎮 User Experience States
+## 🎮 Updated Permission States
 
 ```mermaid
 stateDiagram-v2
@@ -288,99 +350,99 @@ stateDiagram-v2
     Loading --> PermissionScreen: IntroActivity Loads
     
     state PermissionScreen {
-        [*] --> ButtonVisible: Show Permission Button
+        [*] --> CheckVersion: Initialize
+        CheckVersion --> Android12: API < 33
+        CheckVersion --> Android13: API >= 33
+        
+        Android12 --> AutoEnabled: Auto-grant Permission
+        AutoEnabled --> DoneEnabled: Navigation Ready
+        
+        Android13 --> ButtonVisible: Show Permission Button
         ButtonVisible --> ButtonClicked: User Interaction
         
         state ButtonClicked {
-            [*] --> SystemDialog: First/Second Attempt
-            [*] --> CustomDialog: Multiple Attempts
+            [*] --> CheckPrevious: Evaluate Request History
+            CheckPrevious --> SystemDialog: First Request
+            CheckPrevious --> EvaluateSettings: Has Requested Before
+            
+            EvaluateSettings --> SystemDialog: Should Show Rationale
+            EvaluateSettings --> DirectSettings: Direct to Settings
             
             SystemDialog --> Granted: User Allows
             SystemDialog --> Denied: User Denies
             
-            CustomDialog --> Settings: User Clicks Allow
-            CustomDialog --> Denied: User Clicks Don't Allow
+            DirectSettings --> SettingsApp: Open System Settings
             
-            Granted --> ButtonDisabled: Permission Granted
+            Granted --> DoneEnabled: Permission Granted
             Denied --> ButtonVisible: Try Again
-            Settings --> SettingsApp: Open System Settings
         }
         
-        ButtonDisabled --> NextEnabled: Navigation Available
+        DoneEnabled --> NextEnabled: Navigation Available
     }
     
     PermissionScreen --> MainActivity: User Proceeds
-    PermissionScreen --> SettingsApp: Manual Permission
     SettingsApp --> PermissionScreen: Return to App
     
     MainActivity --> [*]: App Running
 ```
 
-## 🔗 Integration Points
+## 🛠️ Implementation Details
 
-### **External Dependencies**
-- **AppIntro2 Library**: Provides slide-based onboarding framework
-- **Android Permission System**: Manages notification permission requests
-- **System Settings**: Fallback for manual permission configuration
+### **IntroPreferences Class**
+- **Purpose**: Centralized SharedPreferences management
+- **Methods**: `isNavigationEnabled()`, `setNavigationEnabled(Boolean)`
+- **Benefits**: Type-safe preference access, encapsulated storage logic
 
-### **Internal Dependencies**
-- **MainActivity**: Navigation destination after permission granted
-- **SplashActivity**: Entry point that launches IntroActivity
-- **String Resources**: Internationalized text content
-- **Layout Resources**: UI definition for permission fragment
+### **Presenter Architecture**
+- **Business Logic**: All permission-related decisions in presenter
+- **State Management**: Direct preference manipulation without delegation
+- **Settings Navigation**: Self-contained settings intent creation and launch
 
-## 🛠️ Configuration & Customization
+### **Fragment Simplification**
+- **UI Focus**: Pure UI component without business logic
+- **Method Organization**: Grouped by functionality (Lifecycle, Setup, UI Updates, Actions)
+- **Clean Interface**: Clear public methods for presenter communication
 
-### **Android Manifest Configuration**
-```xml
-<activity
-    android:name=".activity.IntroActivity"
-    android:exported="false"
-    android:theme="@style/Theme.LifeCycle.AppCompat" />
-```
+## 📱 Updated Platform Compatibility
 
-### **Key Configuration Points**
-- **Theme**: AppCompat theme for consistent styling
-- **Export**: False - internal navigation only
-- **Fragments**: Single NotificationPermissionFragment slide
-- **Permissions**: POST_NOTIFICATIONS for Android 13+
+| Android Version | Behavior | Implementation |
+|----------------|----------|----------------|
+| **API < 26** | Auto-granted, settings fallback | `handleOlderAndroidVersions()` |
+| **API 26-32** | Auto-granted, enhanced settings | `handleOlderAndroidVersions()` |
+| **API 33+** | Full permission flow | `shouldGoToSettings()` logic |
 
-## 📱 Platform Compatibility
-
-| Android Version | Behavior |
-|----------------|----------|
-| **API < 26 (Android 8.0)** | Auto-granted, settings fallback |
-| **API 26-32 (Android 8.0-12)** | Auto-granted, enhanced settings |
-| **API 33+ (Android 13+)** | Full permission flow with dialogs |
-
-## 🧪 Testing Scenarios
+## 🧪 Updated Testing Scenarios
 
 ### **Critical Test Cases**
-1. **Permission Grant Flow**: User allows on first attempt
-2. **Permission Denial Flow**: User denies multiple times
-3. **Settings Integration**: Manual permission via system settings
+1. **IntroPreferences**: Data persistence and retrieval
+2. **Permission Flow**: First request vs. subsequent requests
+3. **Settings Integration**: Direct navigation to system settings
 4. **Version Compatibility**: Behavior across Android versions
-5. **Navigation Control**: Next button state management
-6. **Memory Management**: Proper presenter lifecycle
+5. **State Management**: Navigation state persistence across app sessions
+6. **Code Organization**: Method grouping and flow clarity
 
-### **Edge Cases**
-- App backgrounded during permission dialog
-- System settings unavailable
-- Permission revoked while app running
-- Fragment recreation during configuration changes
+### **New Test Considerations**
+- **Preference Isolation**: Test IntroPreferences independently
+- **Presenter Logic**: Test business logic without UI dependencies
+- **Flow Organization**: Verify method grouping doesn't affect functionality
 
 ---
 
 ## 📝 Summary
 
-The IntroActivity implements a robust, user-friendly permission onboarding flow using modern Android architecture patterns. Its MVP design ensures maintainability and testability while providing a seamless user experience across different Android versions and permission states.
+The updated IntroActivity architecture represents a significant improvement in code organization and separation of concerns. The introduction of `IntroPreferences` creates a dedicated data layer, while the reorganized Fragment and Presenter provide clearer code structure and better maintainability.
 
-**Key Features:**
-- ✅ MVP Architecture with clean separation
-- ✅ Infinite permission retry capability  
-- ✅ Graceful fallback to system settings
-- ✅ Cross-platform compatibility
-- ✅ Comprehensive error handling
-- ✅ Navigation flow control
+**Key Architectural Improvements:**
+- ✅ Dedicated preference management with `IntroPreferences`
+- ✅ Simplified permission flow with `shouldGoToSettings()` logic
+- ✅ Organized code structure with functional grouping
+- ✅ Reduced coupling between components
+- ✅ Enhanced testability with clear separation of concerns
+- ✅ Improved maintainability with logical method organization
 
-This architecture serves as a foundation for scalable Android app development with complex permission requirements.
+**Updated Code Organization:**
+- 📁 **Fragment**: Lifecycle → Setup → UI Updates → Actions
+- 📁 **Presenter**: Event Handlers → State Handlers → Checks → Settings
+- 📁 **Preferences**: Centralized data persistence management
+
+This refined architecture serves as an excellent foundation for scalable Android app development with complex permission requirements and demonstrates best practices in MVP pattern implementation.

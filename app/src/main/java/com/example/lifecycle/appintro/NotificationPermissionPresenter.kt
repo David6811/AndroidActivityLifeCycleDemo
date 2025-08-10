@@ -20,6 +20,9 @@ class NotificationPermissionPresenter(
     }
     
     private var hasRequestedBefore = false
+    private val preferences = IntroPreferences(context)
+
+    // =========================== Public Event Handlers ===========================
 
     fun onViewResumed() {
         when {
@@ -53,25 +56,29 @@ class NotificationPermissionPresenter(
         view = null
     }
 
+    // =========================== Permission State Handlers ===========================
+
     private fun handleOlderAndroidVersions() {
         view?.showPermissionGrantedUI()
-        view?.enableNavigation()
+        preferences.setNavigationEnabled(true)
     }
 
     private fun handleAlreadyGranted() {
         view?.showPermissionGrantedUI()
-        view?.enableNavigation()
+        preferences.setNavigationEnabled(true)
     }
 
     private fun handlePermissionGranted() {
         view?.showPermissionGrantedUI()
-        view?.enableNavigation()
+        preferences.setNavigationEnabled(true)
     }
 
     private fun handlePermissionDenied() {
         view?.showPermissionDeniedUI(shouldGoToSettings())
-        view?.disableNavigation()
+        preferences.setNavigationEnabled(false)
     }
+
+    // =========================== Permission Check Methods ===========================
 
     private fun isAndroid13OrHigher(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -97,6 +104,8 @@ class NotificationPermissionPresenter(
             false
         }
     }
+
+    // =========================== Settings Navigation Methods ===========================
 
     private fun openNotificationSettings() {
         val intent = createNotificationSettingsIntent()

@@ -21,6 +21,8 @@ class NotificationPermissionFragment : Fragment() {
     private lateinit var permissionLauncher: androidx.activity.result.ActivityResultLauncher<String>
     private lateinit var presenter: NotificationPermissionPresenter
     
+    // =========================== Lifecycle Methods ===========================
+    
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_notification_permission, container, false)
         setupViews(view)
@@ -39,6 +41,8 @@ class NotificationPermissionFragment : Fragment() {
         super.onDestroy()
     }
     
+    // =========================== Setup Methods ===========================
+    
     private fun setupViews(view: View) {
         permissionButton = view.findViewById(R.id.btn_allow_notifications)
         permissionButton.setOnClickListener { presenter.onPermissionButtonClicked() }
@@ -56,6 +60,8 @@ class NotificationPermissionFragment : Fragment() {
             presenter.onSystemPermissionResult(isGranted)
         }
     }
+    
+    // =========================== UI Update Methods ===========================
     
     fun showPermissionGrantedUI() {
         permissionButton.apply {
@@ -77,22 +83,13 @@ class NotificationPermissionFragment : Fragment() {
         }
     }
     
+    // =========================== Permission Action Methods ===========================
+    
     fun showSystemPermissionDialog() {
         Log.d(TAG, "Launching system permission request")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    
-    
-    
-    fun enableNavigation() {
-        (activity as? IntroActivity)?.enableNavigation()
-    }
-    
-    fun disableNavigation() {
-        (activity as? IntroActivity)?.disableNavigation()
-    }
 
-    fun getPresenter() = presenter
 }
