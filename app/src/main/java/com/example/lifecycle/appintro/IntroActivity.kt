@@ -31,6 +31,7 @@ class IntroActivity : AppIntro2() {
 
     // 导航到主界面并结束当前activity
     private fun goToMainActivity() {
+        preferences.setIntroCompleted(true)
         startActivity(Intent(this, com.example.lifecycle.activity.MainActivity::class.java))
         finish()
     }

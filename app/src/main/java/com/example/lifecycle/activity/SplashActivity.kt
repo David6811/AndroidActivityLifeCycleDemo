@@ -1,12 +1,15 @@
 package com.example.lifecycle.activity
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.lifecycle.appintro.IntroActivity
+import com.example.lifecycle.appintro.IntroPreferences
 
+@SuppressLint("CustomSplashScreen")
 class SplashActivity : Activity() {
 
     companion object {
@@ -14,13 +17,14 @@ class SplashActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition { false }
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate")
         
-        splashScreen.setKeepOnScreenCondition { false }
-        
-        startActivity(Intent(this, IntroActivity::class.java))
+        // Navigate based on intro completion status
+        val isIntroCompleted = IntroPreferences(this).isIntroCompleted()
+        val targetActivity = if (isIntroCompleted) MainActivity::class.java else IntroActivity::class.java
+        startActivity(Intent(this, targetActivity))
         finish()
     }
 
