@@ -1,15 +1,14 @@
 package com.example.lifecycle.activity
 
-import android.app.Activity
-import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import com.example.lifecycle.R
 import com.example.lifecycle.notification.AppNotificationManager
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity_Lifecycle"
@@ -54,33 +53,21 @@ class MainActivity : Activity() {
     override fun onResume() { 
         super.onResume()
         Log.d(TAG, "onResume")
-        if (!notificationManager.areNotificationsEnabled()) {
-            showNotificationPermissionDialog()
-        }
+        // Permission manager will handle checking and requesting permissions as needed
     }
     
     override fun onPause() { super.onPause(); Log.d(TAG, "onPause") }
     override fun onStop() { super.onStop(); Log.d(TAG, "onStop") }
     override fun onRestart() { super.onRestart(); Log.d(TAG, "onRestart") }
-    override fun onDestroy() { super.onDestroy(); Log.d(TAG, "onDestroy") }
+    override fun onDestroy() { 
+        super.onDestroy() 
+        Log.d(TAG, "onDestroy")
+    }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_MESSAGE, message)
     }
     
-    private fun showNotificationPermissionDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Enable Notifications")
-            .setMessage("Notifications are currently disabled. Would you like to open settings to enable them?")
-            .setPositiveButton("Open Settings") { _, _ ->
-                notificationManager.openNotificationSettings()
-            }
-            .setNegativeButton("Skip") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .setCancelable(true)
-            .show()
-    }
 }
 

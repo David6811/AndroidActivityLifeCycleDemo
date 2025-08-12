@@ -42,6 +42,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.appintro)
+    
+    // Activity result APIs for permission handling
+    implementation("androidx.activity:activity-ktx:1.8.2")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
