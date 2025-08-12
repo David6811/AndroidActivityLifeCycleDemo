@@ -1,6 +1,7 @@
 package com.example.lifecycle.activity
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -54,7 +55,7 @@ class MainActivity : Activity() {
         super.onResume()
         Log.d(TAG, "onResume")
         if (!notificationManager.areNotificationsEnabled()) {
-            notificationManager.openNotificationSettings()
+            showNotificationPermissionDialog()
         }
     }
     
@@ -66,6 +67,20 @@ class MainActivity : Activity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_MESSAGE, message)
+    }
+    
+    private fun showNotificationPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Enable Notifications")
+            .setMessage("Notifications are currently disabled. Would you like to open settings to enable them?")
+            .setPositiveButton("Open Settings") { _, _ ->
+                notificationManager.openNotificationSettings()
+            }
+            .setNegativeButton("Skip") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setCancelable(true)
+            .show()
     }
 }
 
